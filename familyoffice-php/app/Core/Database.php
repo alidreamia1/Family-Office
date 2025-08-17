@@ -20,9 +20,7 @@ class Database
 				PDO::MYSQL_ATTR_INIT_COMMAND => 'SET sql_mode=STRICT_ALL_TABLES'
 			]);
 		} catch (PDOException $e) {
-			http_response_code(500);
-			echo 'DB Connection failed';
-			exit;
+			throw $e;
 		}
 	}
 
