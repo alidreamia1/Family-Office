@@ -1,0 +1,172 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  INVESTOR
+}
+
+enum KYCStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum InvestmentType {
+  DEPOSIT
+  WITHDRAWAL
+}
+
+enum WebhookEventType {
+  INVESTOR_UPDATED
+  DIVIDEND_DISTRIBUTED
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  passwordHash     String
+  name             String
+  phone            String?
+  role             UserRole  @default(INVESTOR)
+  isActive         Boolean   @default(true)
+  lastLoginAt      DateTime?
+  resetOtp         String?
+  resetOtpExpiresAt DateTime?
+
+  investorProfile  InvestorProfile?
+  activityLogs     ActivityLog[]
+  kycVerifiedProfiles InvestorProfile[] @relation("KycVerifiedBy")
+  investmentApprovals InvestmentTransaction[] @relation("InvestmentApprovedBy")
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model InvestorProfile {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id])
+
+  address              String?
+  bankName             String?
+  bankAccountEncrypted String?
+  bankAccountIV        String?
+  nationalIdNumber     String?
+
+  photoSelfiePath      String?
+  photoKtpPath         String?
+  photoBankbookPath    String?
+
+  kycStatus            KYCStatus @default(PENDING)
+  kycVerifiedAt        DateTime?
+  kycVerifiedById      String?
+  kycVerifiedBy        User?     @relation("KycVerifiedBy", fields: [kycVerifiedById], references: [id])
+
+  investments          InvestmentTransaction[]
+  dividendPayouts      DividendPayout[]
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model InvestmentTransaction {
+  id             String          @id @default(cuid())
+  investorId     String
+  investor       InvestorProfile @relation(fields: [investorId], references: [id])
+  type           InvestmentType
+  amount         Decimal         @db.Decimal(20, 2)
+  note           String?
+  approvedById   String?
+  approvedBy     User?           @relation("InvestmentApprovedBy", fields: [approvedById], references: [id])
+
+  createdAt      DateTime        @default(now())
+}
+
+model DividendPeriod {
+  id             String     @id @default(cuid())
+  label          String     // e.g. 2025-07 or Q2-2025
+  startDate      DateTime
+  endDate        DateTime
+  totalProfit    Decimal    @db.Decimal(20, 2)
+  distributedAt  DateTime?
+
+  payouts        DividendPayout[]
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model DividendPayout {
+  id             String            @id @default(cuid())
+  periodId       String
+  period         DividendPeriod    @relation(fields: [periodId], references: [id])
+  investorId     String
+  investor       InvestorProfile   @relation(fields: [investorId], references: [id])
+  investorCapital Decimal          @db.Decimal(20, 2)
+  sharePercent   Decimal           @db.Decimal(8, 4)
+  amount         Decimal           @db.Decimal(20, 2)
+  paidAt         DateTime?
+
+  createdAt      DateTime          @default(now())
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actor       User?    @relation(fields: [actorUserId], references: [id])
+  action      String
+  entityType  String?
+  entityId    String?
+  ipAddress   String?
+  meta        Json?
+  createdAt   DateTime @default(now())
+}
+
+model WebhookSubscription {
+  id        String            @id @default(cuid())
+  name      String
+  url       String
+  event     WebhookEventType
+  isActive  Boolean           @default(true)
+  attempts  WebhookAttempt[]
+  createdAt DateTime          @default(now())
+}
+
+model WebhookAttempt {
+  id         String   @id @default(cuid())
+  webhookId  String
+  webhook    WebhookSubscription @relation(fields: [webhookId], references: [id])
+  event      WebhookEventType
+  statusCode Int?
+  response   String?
+  error      String?
+  createdAt  DateTime @default(now())
+}
+
+model Setting {
+  id                String   @id @default("singleton")
+  companyName       String?
+  smtpHost          String?
+  smtpPort          Int?
+  smtpUser          String?
+  smtpPass          String?
+  recaptchaSiteKey  String?
+  recaptchaSecret   String?
+  googleSheetId     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

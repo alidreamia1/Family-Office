@@ -1,0 +1,15 @@
+Options -Indexes
+RewriteEngine On
+RewriteBase /
+
+# Block access to sensitive files
+<FilesMatch "(composer\.json|composer\.lock|\.env|\.git|\.htaccess|schema\.sql|seed\.sql)$">
+    Require all denied
+</FilesMatch>
+
+# Front controller
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
