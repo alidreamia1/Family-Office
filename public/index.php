@@ -8,6 +8,25 @@ use App\Core\Auth;
 session_name($_ENV['SESSION_NAME'] ?? 'FOSESSID');
 session_start();
 
+// Lightweight diagnostics (no router needed)
+if (isset($_GET['ping'])) {
+	echo 'ok-front';
+	exit;
+}
+if (isset($_GET['diag'])) {
+	header('Content-Type: text/plain; charset=utf-8');
+	echo "PHP " . PHP_VERSION . "\n";
+	echo "SAPI: " . php_sapi_name() . "\n";
+	echo "DocRoot: " . ($_SERVER['DOCUMENT_ROOT'] ?? '') . "\n";
+	echo "cwd: " . getcwd() . "\n";
+	echo "Files:\n";
+	echo "- app/Core/Router.php: " . (file_exists(dirname(__DIR__).'/app/Core/Router.php') ? 'yes' : 'no') . "\n";
+	echo "- public/index.php: " . (file_exists(__FILE__) ? 'yes' : 'no') . "\n";
+	echo "- vendor/autoload.php: " . (file_exists(dirname(__DIR__).'/vendor/autoload.php') ? 'yes' : 'no') . "\n";
+	echo "ENV from .env? " . (file_exists(dirname(__DIR__).'/.env') ? 'yes' : 'no') . "\n";
+	exit;
+}
+
 // Attempt to load composer. If missing, continue (installer can run without vendor)
 $autoload = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($autoload)) { require_once $autoload; }
