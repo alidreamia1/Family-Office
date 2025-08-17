@@ -1,9 +1,12 @@
 import { Router } from 'express';
+import { authRequired, requireRole } from '../middleware/auth';
+import { deposit, listTransactions, withdraw } from '../controllers/investmentController';
 
 const router = Router();
 
-router.post('/deposit', (req, res) => res.status(501).json({ message: 'Not implemented' }));
-router.post('/withdraw', (req, res) => res.status(501).json({ message: 'Not implemented' }));
-router.get('/transactions/:investorId', (req, res) => res.status(501).json({ message: 'Not implemented' }));
+router.use(authRequired);
+router.post('/deposit', requireRole(['ADMIN']), deposit);
+router.post('/withdraw', requireRole(['ADMIN']), withdraw);
+router.get('/transactions/:investorId', requireRole(['ADMIN', 'INVESTOR']), listTransactions);
 
 export default router;
