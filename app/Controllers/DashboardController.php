@@ -11,10 +11,7 @@ class DashboardController
 	public function index(): void
 	{
 		$user = Auth::user();
-		if (!$user) {
-			header('Location: /login');
-			return;
-		}
+		if (!$user) { header('Location: /login'); return; }
 		$pdo = Database::pdo();
 		$totals = [
 			'capital' => (float)$pdo->query("SELECT COALESCE(SUM(amount),0) FROM family_capital WHERE type='DEPOSIT'")->fetchColumn() - (float)$pdo->query("SELECT COALESCE(SUM(amount),0) FROM family_capital WHERE type='WITHDRAWAL'")->fetchColumn(),
