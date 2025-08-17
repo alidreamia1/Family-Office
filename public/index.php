@@ -8,12 +8,23 @@ use App\Core\Auth;
 session_name($_ENV['SESSION_NAME'] ?? 'FOSESSID');
 session_start();
 
-require_once __DIR__ . '/../vendor/autoload.php';
+// Attempt to load composer. If missing, continue (installer can run without vendor)
+$autoload = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($autoload)) { require_once $autoload; }
 
 $envPath = dirname(__DIR__);
 if (file_exists($envPath . '/.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable($envPath);
-    $dotenv->safeLoad();
+    if (class_exists('Dotenv\\Dotenv')) {
+        $dotenv = Dotenv\\Dotenv::createImmutable($envPath);
+        $dotenv->safeLoad();
+    } else {
+        // Fallback: parse .env manually (very basic)
+        foreach (explode("\n", (string)@file_get_contents($envPath.'/.env')) as $line) {
+            if (!trim($line) || str_starts_with(trim($line), '#')) continue;
+            [$k,$v] = array_pad(explode('=', $line, 2), 2, '');
+            $_ENV[trim($k)] = trim($v);
+        }
+    }
 }
 
 ini_set('display_errors', '1');
