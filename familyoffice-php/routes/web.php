@@ -12,14 +12,20 @@ use App\Controllers\ReportsController;
 use App\Core\Database;
 
 /** @var Router $router */
-$hasAdmin = false;
-try { $hasAdmin = (int)Database::pdo()->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name='users'")->fetchColumn() > 0
-	&& (int)Database::pdo()->query("SELECT COUNT(*) FROM users WHERE role='ADMIN'")->fetchColumn() > 0; } catch (\Throwable $e) { $hasAdmin = false; }
+$needSetup = !file_exists(dirname(__DIR__) . '/.env');
+if (!$needSetup) {
+	try {
+		Database::pdo();
+	} catch (Throwable $e) {
+		$needSetup = true;
+	}
+}
 
-$router->get('/', $hasAdmin ? [DashboardController::class, 'index'] : [InstallerController::class, 'index']);
+$router->get('/', $needSetup ? [InstallerController::class, 'index'] : [DashboardController::class, 'index']);
 $router->get('/health', function () { echo 'ok'; });
 
 $router->get('/install', [InstallerController::class, 'index']);
+$router->post('/install/db', [InstallerController::class, 'saveDb']);
 $router->post('/install', [InstallerController::class, 'store']);
 
 $router->get('/login', [AuthController::class, 'showLogin']);
