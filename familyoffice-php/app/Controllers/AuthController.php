@@ -10,6 +10,7 @@ class AuthController
 {
 	public function showLogin(): void
 	{
+		if (Auth::user()) { header('Location: /'); return; }
 		include __DIR__ . '/../../views/auth/login.php';
 	}
 
@@ -21,8 +22,8 @@ class AuthController
 		$stmt->execute([$email]);
 		$user = $stmt->fetch();
 		if (!$user || !Auth::verifyPassword($password, $user['password_hash'])) {
-			http_response_code(401);
-			echo 'Kredensial salah';
+			$_SESSION['login_error'] = 'Email atau password salah';
+			header('Location: /login');
 			return;
 		}
 		Auth::login($user);
