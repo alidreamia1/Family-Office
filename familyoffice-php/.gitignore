@@ -1,0 +1,19 @@
+# Dependencies
+/vendor/
+
+# Environment & secrets
+.env
+.env.*
+
+# Logs & uploads
+/storage/logs/
+/storage/uploads/
+
+# IDE & OS
+/.idea/
+/.vscode/
+.DS_Store
+Thumbs.db
+
+# Cache
+/.cache/
